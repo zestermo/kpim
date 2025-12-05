@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  body {
+    @apply font-body text-white antialiased;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+  }
+
+  /* Pixel-perfect rendering for pixel art */
+  .pixel-art {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}
+
+@layer components {
+  /* Game Panel - Soft pixel UI style */
+  .game-panel {
+    @apply bg-gradient-to-br from-gray-800/90 to-gray-900/90 
+           rounded-2xl border-2 border-kpop-purple-500/30 
+           backdrop-blur-sm shadow-xl;
+    box-shadow: 
+      0 0 20px rgba(168, 85, 247, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-bold text-white
+           bg-gradient-to-r from-kpop-pink-500 to-kpop-purple-500
+           hover:from-kpop-pink-400 hover:to-kpop-purple-400
+           active:from-kpop-pink-600 active:to-kpop-purple-600
+           transition-all duration-200 transform hover:scale-105 active:scale-95
+           shadow-lg hover:shadow-kpop-pink-500/25
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl font-bold text-white
+           bg-gradient-to-r from-kpop-blue-500 to-kpop-purple-500
+           hover:from-kpop-blue-400 hover:to-kpop-purple-400
+           transition-all duration-200 transform hover:scale-105 active:scale-95
+           shadow-lg;
+  }
+
+  .btn-gold {
+    @apply px-6 py-3 rounded-xl font-bold text-gray-900
+           bg-gradient-to-r from-kpop-gold-400 to-kpop-gold-500
+           hover:from-kpop-gold-300 hover:to-kpop-gold-400
+           transition-all duration-200 transform hover:scale-105 active:scale-95
+           shadow-lg;
+  }
+
+  /* Input styles */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl 
+           bg-gray-800/50 border-2 border-gray-600/50
+           text-white placeholder-gray-400
+           focus:border-kpop-purple-500 focus:ring-2 focus:ring-kpop-purple-500/20
+           transition-all duration-200 outline-none;
+  }
+
+  /* Card styles for idols, groups, etc */
+  .idol-card {
+    @apply game-panel p-4 hover:border-kpop-pink-500/50 
+           transition-all duration-300 cursor-pointer
+           hover:transform hover:scale-105;
+  }
+
+  /* Rarity colors */
+  .rarity-common { @apply text-gray-400; }
+  .rarity-uncommon { @apply text-green-400; }
+  .rarity-rare { @apply text-blue-400; }
+  .rarity-epic { @apply text-purple-400; }
+  .rarity-legendary { @apply text-kpop-gold-400; }
+
+  /* Stat bar */
+  .stat-bar {
+    @apply h-2 rounded-full bg-gray-700 overflow-hidden;
+  }
+  
+  .stat-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* Resource display */
+  .resource-badge {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full
+           bg-gray-800/80 border border-gray-600/50;
+  }
+
+  /* Navigation tab */
+  .nav-tab {
+    @apply flex flex-col items-center justify-center px-4 py-2
+           text-gray-400 hover:text-white transition-colors duration-200;
+  }
+  
+  .nav-tab.active {
+    @apply text-kpop-pink-400;
+  }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/70 backdrop-blur-sm 
+           flex items-center justify-center z-50;
+  }
+
+  /* Progress timer */
+  .progress-timer {
+    @apply relative h-2 rounded-full bg-gray-700 overflow-hidden;
+  }
+  
+  .progress-timer-fill {
+    @apply absolute inset-y-0 left-0 bg-gradient-to-r from-kpop-pink-500 to-kpop-purple-500
+           transition-all duration-1000;
+  }
+
+  /* Notification toast */
+  .toast {
+    @apply fixed top-4 right-4 px-6 py-4 rounded-xl
+           bg-gray-800 border-2 border-kpop-purple-500/50
+           shadow-xl z-50 animate-float;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ec4899, #a855f7);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #f472b6, #c084fc);
+}
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #ec4899;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Viral animation */
+@keyframes viral {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1) rotate(-5deg); }
+  50% { transform: scale(1.2); }
+  75% { transform: scale(1.1) rotate(5deg); }
+}
+
+.viral-effect {
+  animation: viral 0.5s ease-in-out;
+}
+

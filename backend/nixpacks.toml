@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo_mysql", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.tokenizer", "php83Extensions.dom", "php83Extensions.fileinfo"]
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader"]
+
+[start]
+cmd = "chmod +x start.sh && ./start.sh"

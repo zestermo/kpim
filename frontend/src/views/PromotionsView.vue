@@ -48,6 +48,9 @@ const completedPromotions = computed(() =>
   gameStore.promotions.filter(p => p.is_completed).slice(0, 10)
 )
 
+const playerFans = computed(() => gameStore.player?.fans || 0)
+const playerReputation = computed(() => gameStore.player?.reputation || 0)
+
 const availableSongs = computed(() => 
   gameStore.completedSongs
 )
@@ -57,6 +60,24 @@ const songsForGroup = computed(() => {
   return availableSongs.value.filter(s => s.group_id === selectedGroupId.value)
 })
 
+function meetsRequirements(type) {
+  const player = gameStore.player
+  if (!player) return false
+  const fans = player.fans || 0
+  const rep = player.reputation || 0
+  const neededFans = type.required_fans || 0
+  const neededRep = type.required_reputation || 0
+  return fans >= neededFans && rep >= neededRep
+}
+
+function requirementText(type) {
+  if (!type) return ''
+  const fanReq = type.required_fans || 0
+  const repReq = type.required_reputation || 0
+  if (fanReq === 0 && repReq === 0) return 'No unlock requirement'
+  return `${fanReq.toLocaleString()} fans • ${repReq.toLocaleString()} rep`
+}
+
 const canStartPromotion = computed(() => {
   return gameStore.groups.length > 0 && availableSongs.value.length > 0
 })
@@ -64,7 +85,7 @@ const canStartPromotion = computed(() => {
 const canSubmitPromotion = computed(() => {
   if (!selectedGroupId.value || !selectedSongId.value || !selectedType.value) return false
   const type = promotionTypes.value.find(t => t.type === selectedType.value)
-  return type && gameStore.player?.money >= type.cost
+  return type && meetsRequirements(type) && gameStore.player?.money >= type.cost
 })
 
 function openStartModal() {
@@ -137,7 +158,7 @@ function getSongById(id) {
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div>
         <h1 class="text-2xl font-bold">Promotions</h1>
-        <p class="text-gray-400">Run promotions to gain fans and money</p>
+        <p class="text-gray-400">Run promotions to gain fans, money, and reputation.</p>
       </div>
       
       <button 
@@ -148,6 +169,17 @@ function getSongById(id) {
         <span>📢</span>
         Start Promotion
       </button>
+    </div>
+
+    <!-- Progress requirements -->
+    <div class="game-panel p-4 flex items-center justify-between gap-4">
+      <div>
+        <p class="text-sm text-gray-400">Your current reach</p>
+        <p class="font-bold text-lg">💖 {{ playerFans.toLocaleString() }} fans • ⭐ {{ playerReputation.toLocaleString() }} reputation</p>
+      </div>
+      <div class="text-sm text-gray-400">
+        Higher-tier promotions unlock as you grow fans and reputation.
+      </div>
     </div>
     
     <!-- Requirements Warning -->
@@ -326,15 +358,19 @@ function getSongById(id) {
                   selectedType === type.type 
                     ? 'border-kpop-pink-500 bg-kpop-pink-500/10' 
                     : 'border-gray-600 hover:border-gray-500',
-                  gameStore.player?.money < type.cost ? 'opacity-50' : ''
+                  (!meetsRequirements(type) || gameStore.player?.money < type.cost) ? 'opacity-50' : ''
                 ]"
-                :disabled="gameStore.player?.money < type.cost"
+                :disabled="!meetsRequirements(type) || gameStore.player?.money < type.cost"
               >
                 <div class="flex items-center justify-between">
                   <div>
                     <div class="font-bold">{{ type.name }}</div>
                     <div class="text-sm text-gray-400">
                       ~{{ type.base_fans }} fans | {{ type.duration_minutes }} min
+                    </div>
+                    <div class="text-xs mt-1" :class="meetsRequirements(type) ? 'text-green-400' : 'text-red-400'">
+                      {{ requirementText(type) }}
+                      <span v-if="!meetsRequirements(type)"> (Locked)</span>
                     </div>
                   </div>
                   <div class="text-right">

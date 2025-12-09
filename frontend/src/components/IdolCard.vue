@@ -34,8 +34,19 @@ function hashString(str) {
   return str.split('').reduce((acc, char) => ((acc << 5) - acc) + char.charCodeAt(0), 0)
 }
 
+function spriteToImage(spriteKey) {
+  const match = /idol_(\d+)/.exec(spriteKey || '')
+  if (match) {
+    const num = Math.min(12, Math.max(1, parseInt(match[1], 10)))
+    return `/images/idols/${num}.png`
+  }
+  return null
+}
+
 const idolImage = computed(() => {
   if (props.idol.image_url) return props.idol.image_url
+  const spriteImg = spriteToImage(props.idol.sprite_key)
+  if (spriteImg) return spriteImg
   
   const seedBase = props.idol.id ?? hashString(props.idol.name || '')
   const index = Math.abs(seedBase) % idolImages.length

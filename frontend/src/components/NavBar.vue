@@ -12,6 +12,7 @@ const navItems = [
   { path: '/groups', icon: '👥', label: 'Groups' },
   { path: '/music', icon: '🎵', label: 'Music' },
   { path: '/promotions', icon: '📢', label: 'Promo' },
+  { path: '/upgrades', icon: '⬆️', label: 'Upgrades' },
 ]
 
 async function handleLogout() {

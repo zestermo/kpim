@@ -17,6 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.get('/me')
       user.value = response.data.data.user
+      console.log('[auth] checkAuth user raw', response.data.data.user)
       
       // Load game data
       const gameStore = useGameStore()
@@ -36,6 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.post('/auth/register', data)
       user.value = response.data.data.user
+      console.log('[auth] register user raw', response.data.data.user)
       
       const gameStore = useGameStore()
       gameStore.setPlayer(user.value.playerProfile)
@@ -58,6 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.post('/auth/login', { email, password })
       user.value = response.data.data.user
+      console.log('[auth] login user raw', response.data.data.user)
       
       const gameStore = useGameStore()
       gameStore.setPlayer(user.value.playerProfile)

@@ -60,6 +60,8 @@ const completedSongs = computed(() =>
   gameStore.songs.filter(s => s.is_completed)
 )
 
+const nowPlaying = computed(() => gameStore.nowPlaying)
+
 function openProduceModal() {
   selectedGroupId.value = gameStore.groups[0]?.id || null
   selectedGenre.value = 'pop'
@@ -77,6 +79,13 @@ async function handleProduceSong() {
   if (result.success) {
     showProduceModal.value = false
   }
+}
+
+async function debugProduceInstant() {
+  const firstGroup = gameStore.groups[0]
+  if (!firstGroup) return
+  await gameStore.produceSong(firstGroup.id, 'pop', `Debug Track ${Date.now()}`, true)
+  await gameStore.fetchSongs()
 }
 
 function getGenreInfo(genreValue) {
@@ -97,6 +106,32 @@ function getTimeRemaining(endsAt) {
 function getGroupById(id) {
   return gameStore.groups.find(g => g.id === id)
 }
+
+function playSong(song) {
+  if (!song.audio_url) return
+  gameStore.playSongAudio(song)
+}
+
+function pauseSong() {
+  gameStore.pauseSongAudio()
+}
+
+function restartSong() {
+  gameStore.restartSongAudio()
+}
+
+function isCurrent(song) {
+  return nowPlaying.value?.song?.id === song.id
+}
+
+function volumeLabel(vol) {
+  return Math.round(vol * 100)
+}
+
+function setVolume(evt) {
+  const vol = Number(evt.target.value) / 100
+  gameStore.setAudioVolume(vol)
+}
 </script>
 
 <template>
@@ -116,6 +151,15 @@ function getGroupById(id) {
         <span>🎵</span>
         Produce New Song
         <span class="text-sm opacity-75">(💰 {{ SONG_COST.toLocaleString() }})</span>
+      </button>
+
+      <button
+        v-if="gameStore.groups.length > 0"
+        @click="debugProduceInstant"
+        class="btn-secondary flex items-center gap-2 text-xs"
+        title="Debug: instant-complete song"
+      >
+        ⚡ Debug Song
       </button>
     </div>
     
@@ -205,8 +249,36 @@ function getGroupById(id) {
           </div>
           
           <div class="flex items-center justify-between pt-3 border-t border-gray-700">
-            <div class="text-sm text-gray-400">
-              Promo Power: <span class="text-kpop-gold-400 font-bold">{{ song.promotion_power }}</span>
+            <div class="text-sm text-gray-400 flex items-center gap-3 flex-wrap">
+              <span>Promo Power: <span class="text-kpop-gold-400 font-bold">{{ song.promotion_power }}</span></span>
+              <span v-if="song.audio_url" class="inline-flex items-center gap-2 flex-wrap">
+                <button 
+                  class="btn-secondary text-xs py-1 px-2"
+                  @click="isCurrent(song) && nowPlaying?.isPlaying ? pauseSong() : playSong(song)"
+                >
+                  <span v-if="isCurrent(song) && nowPlaying?.isPlaying">⏸ Pause</span>
+                  <span v-else>▶️ Play</span>
+                </button>
+                <button 
+                  class="btn-secondary text-xs py-1 px-2"
+                  @click="restartSong"
+                  :disabled="!isCurrent(song)"
+                >
+                  ⏮ Restart
+                </button>
+                <div class="flex items-center gap-1 text-xs text-gray-300">
+                  <span>🔊</span>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    :value="Math.round(gameStore.audioVolume * 100)" 
+                    @input="setVolume"
+                  />
+                  <span>{{ volumeLabel(gameStore.audioVolume) }}%</span>
+                </div>
+              </span>
+              <span v-else class="text-xs text-gray-500">No audio</span>
             </div>
             <router-link to="/promotions" class="btn-primary text-sm py-2 px-4">
               Promote 📢

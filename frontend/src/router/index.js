@@ -60,6 +60,12 @@ const routes = [
     component: () => import('../views/PromotionsView.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/upgrades',
+    name: 'AgencyUpgrades',
+    component: () => import('../views/AgencyUpgradesView.vue'),
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({

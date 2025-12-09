@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\AgencyUpgrade;
 
 class PlayerProfile extends Model
 {
@@ -34,6 +35,11 @@ class PlayerProfile extends Model
     public const STARTING_MONEY = 50000;
     public const STARTING_FANS = 0;
     public const STARTING_REPUTATION = 0;
+
+    public function agencyUpgrades(): HasMany
+    {
+        return $this->hasMany(AgencyUpgrade::class);
+    }
 
     public function user(): BelongsTo
     {
@@ -117,6 +123,38 @@ class PlayerProfile extends Model
         }
         
         return 0;
+    }
+
+    public function getUpgradeLevel(string $type): int
+    {
+        return (int) ($this->agencyUpgrades()->where('type', $type)->value('level') ?? 0);
+    }
+
+    public function getUpgradeBonus(string $type): float
+    {
+        $config = AgencyUpgrade::CONFIG[$type] ?? null;
+        if (!$config) {
+            return 0;
+        }
+
+        return $this->getUpgradeLevel($type) * $config['bonus_per_level'];
+    }
+
+    public function getPromotionPayoutBonus(): float
+    {
+        return $this->getUpgradeBonus(AgencyUpgrade::TYPE_PROMO_PAYOUT);
+    }
+
+    public function getViralityBonus(): float
+    {
+        return $this->getUpgradeBonus(AgencyUpgrade::TYPE_VIRALITY);
+    }
+
+    public function getProductionSpeedMultiplier(): float
+    {
+        // Multiplier applied to production time. Capped so it never hits zero.
+        $reduction = $this->getUpgradeBonus(AgencyUpgrade::TYPE_PRODUCTION_SPEED);
+        return max(0.4, 1 - $reduction);
     }
 }
 

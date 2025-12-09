@@ -16,6 +16,7 @@ class Song extends Model
         'group_id',
         'title',
         'genre',
+        'audio_url',
         'quality',
         'hype',
         'production_cost',
@@ -29,6 +30,7 @@ class Song extends Model
         'production_cost' => 'integer',
         'completed_at' => 'datetime',
         'production_ends_at' => 'datetime',
+        'audio_url' => 'string',
     ];
 
     // Genres

@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\Manager;
 use App\Models\Promotion;
 use App\Models\Song;
+use App\Models\AgencyUpgrade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -94,6 +95,24 @@ class PromotionController extends Controller
 
         $promoConfig = Promotion::PROMOTIONS[$validated['type']];
 
+        // Check fans/reputation unlocks
+        $requiredFans = $promoConfig['required_fans'] ?? 0;
+        $requiredReputation = $promoConfig['required_reputation'] ?? 0;
+
+        if ($player->fans < $requiredFans || $player->reputation < $requiredReputation) {
+            return response()->json([
+                'success' => false,
+                'code' => 'PROMOTION_LOCKED',
+                'message' => 'This promotion is locked. Requires at least ' . number_format($requiredFans) . ' fans and ' . number_format($requiredReputation) . ' reputation.',
+                'meta' => [
+                    'required_fans' => $requiredFans,
+                    'required_reputation' => $requiredReputation,
+                    'current_fans' => $player->fans,
+                    'current_reputation' => $player->reputation,
+                ],
+            ], 400);
+        }
+
         // Check cost
         if ($player->money < $promoConfig['cost']) {
             return response()->json([
@@ -106,8 +125,8 @@ class PromotionController extends Controller
         $player->spendMoney($promoConfig['cost']);
 
         // Calculate rewards
-        $promotionBonus = $player->getManagerBonus(Manager::BONUS_PROMOTION);
-        $viralityBonus = $player->getManagerBonus(Manager::BONUS_VIRALITY);
+        $promotionBonus = $player->getManagerBonus(Manager::BONUS_PROMOTION) + $player->getPromotionPayoutBonus();
+        $viralityBonus = $player->getManagerBonus(Manager::BONUS_VIRALITY) + $player->getViralityBonus();
         
         $rewards = Promotion::calculateRewards(
             $validated['type'],

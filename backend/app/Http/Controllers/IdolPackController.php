@@ -19,7 +19,7 @@ class IdolPackController extends Controller
     {
         $player = $request->user()->playerProfile;
 
-        $packCost = Idol::SCOUT_COST * 5; // pack of 5 at current per-scout cost
+        $packCost = Idol::PACK_COST;
 
         if ($player->money < $packCost) {
             return response()->json([

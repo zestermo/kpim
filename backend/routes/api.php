@@ -10,6 +10,8 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\SongController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\IdolPackController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\AgencyUpgradeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,6 +68,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/promotions/available', [PromotionController::class, 'available']);
         Route::post('/promotions', [PromotionController::class, 'start']);
         Route::post('/promotions/{promotion}/complete', [PromotionController::class, 'complete']);
+        
+        // Passive events
+        Route::post('/events/pulse', [EventController::class, 'pulse']);
+
+        // Agency upgrades
+        Route::get('/agency-upgrades', [AgencyUpgradeController::class, 'index']);
+        Route::post('/agency-upgrades/purchase', [AgencyUpgradeController::class, 'purchase']);
     });
 });
 

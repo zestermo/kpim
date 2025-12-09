@@ -10,9 +10,17 @@ export const useGameStore = defineStore('game', () => {
   const groups = ref([])
   const songs = ref([])
   const promotions = ref([])
+  const promotionTypes = ref([])
+  const upgrades = ref([])
   const loading = ref(false)
   const packLoading = ref(false)
   const packDraft = ref(null)
+  const eventLog = ref([])
+  const unreadEvents = ref(0)
+  const nowPlaying = ref(null) // { song, isPlaying, progress? }
+  const audioVolume = ref(0.7)
+  let audioEl = null
+  let eventsInterval = null
   
   // Computed
   const formattedMoney = computed(() => {
@@ -45,7 +53,20 @@ export const useGameStore = defineStore('game', () => {
     groups.value = []
     songs.value = []
     promotions.value = []
+    promotionTypes.value = []
+    upgrades.value = []
     packDraft.value = null
+    eventLog.value = []
+    unreadEvents.value = 0
+    nowPlaying.value = null
+    if (audioEl) {
+      audioEl.pause()
+      audioEl = null
+    }
+    if (eventsInterval) {
+      clearInterval(eventsInterval)
+      eventsInterval = null
+    }
   }
   
   async function fetchManagers() {
@@ -155,6 +176,112 @@ export const useGameStore = defineStore('game', () => {
       packLoading.value = false
     }
   }
+
+  async function pulseEvents() {
+    if (!player.value) return
+    try {
+      const response = await api.post('/events/pulse')
+      const events = response.data.data.events || []
+      if (events.length) {
+        player.value = response.data.data.player
+        const toast = useToastStore()
+        events.forEach(ev => {
+          eventLog.value.unshift({ ...ev, unread: true })
+          if (eventLog.value.length > 25) {
+            eventLog.value.pop()
+          }
+          unreadEvents.value += 1
+          toast.info(`${ev.message} +$${ev.money.toLocaleString()} / +${ev.fans.toLocaleString()} fans`)
+        })
+      }
+    } catch (error) {
+      // silent
+    }
+  }
+
+  function startEventPolling() {
+    if (eventsInterval) return
+    pulseEvents()
+    eventsInterval = setInterval(pulseEvents, 45000)
+  }
+
+  function markEventsRead() {
+    unreadEvents.value = 0
+    eventLog.value = eventLog.value.map(ev => ({ ...ev, unread: false }))
+  }
+
+  function ensureAudio() {
+    if (!audioEl) {
+      audioEl = new Audio()
+      audioEl.volume = audioVolume.value
+    }
+  }
+
+  function playSongAudio(song) {
+    if (!song?.audio_url) return
+    ensureAudio()
+    if (audioEl.src !== song.audio_url) {
+      audioEl.src = song.audio_url
+      audioEl.currentTime = 0
+    }
+    audioEl.volume = audioVolume.value
+    audioEl.play()
+    nowPlaying.value = {
+      song,
+      isPlaying: true
+    }
+  }
+
+  function pauseSongAudio() {
+    if (!audioEl) return
+    audioEl.pause()
+    if (nowPlaying.value) {
+      nowPlaying.value = { ...nowPlaying.value, isPlaying: false }
+    }
+  }
+
+  function restartSongAudio() {
+    if (!audioEl) return
+    audioEl.currentTime = 0
+    audioEl.play()
+    if (nowPlaying.value) {
+      nowPlaying.value = { ...nowPlaying.value, isPlaying: true }
+    }
+  }
+
+  function setAudioVolume(vol) {
+    audioVolume.value = Math.min(1, Math.max(0, vol))
+    if (audioEl) {
+      audioEl.volume = audioVolume.value
+    }
+  }
+
+  async function pulseEvents() {
+    if (!player.value) return
+    try {
+      const response = await api.post('/events/pulse')
+      const events = response.data.data.events || []
+      if (events.length) {
+        player.value = response.data.data.player
+        const toast = useToastStore()
+        events.forEach(ev => {
+          eventLog.value.unshift(ev)
+          if (eventLog.value.length > 25) {
+            eventLog.value.pop()
+          }
+          toast.info(`${ev.message} +$${ev.money.toLocaleString()} / +${ev.fans.toLocaleString()} fans`)
+        })
+      }
+    } catch (error) {
+      // silent
+    }
+  }
+
+  function startEventPolling() {
+    if (eventsInterval) return
+    pulseEvents()
+    eventsInterval = setInterval(pulseEvents, 45000)
+  }
   
   async function fetchGroups() {
     try {
@@ -202,7 +329,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
   
-  async function produceSong(groupId, genre, title = null) {
+  async function produceSong(groupId, genre, title = null, debugComplete = false) {
     const toast = useToastStore()
     loading.value = true
     
@@ -210,14 +337,17 @@ export const useGameStore = defineStore('game', () => {
       const response = await api.post('/songs', {
         group_id: groupId,
         genre,
-        title
+        title,
+        debug_complete: debugComplete
       })
       
-      songs.value.push(response.data.data.song)
+      const newSong = response.data.data.song
+      songs.value.push(newSong)
       player.value = response.data.data.player
       
-      toast.success(`Started producing "${response.data.data.song.title}"! 🎵`)
-      return { success: true, song: response.data.data.song }
+      const msg = newSong.is_completed ? `Created "${newSong.title}" instantly (debug)` : `Started producing "${newSong.title}"! 🎵`
+      toast.success(msg)
+      return { success: true, song: newSong }
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to produce song'
       toast.error(message)
@@ -257,7 +387,8 @@ export const useGameStore = defineStore('game', () => {
   async function fetchAvailablePromotions() {
     try {
       const response = await api.get('/promotions/available')
-      return response.data.data.promotion_types
+      promotionTypes.value = response.data.data.promotion_types
+      return promotionTypes.value
     } catch (error) {
       console.error('Failed to fetch promotion types:', error)
       return []
@@ -331,6 +462,33 @@ export const useGameStore = defineStore('game', () => {
       console.error('Failed to refresh player:', error)
     }
   }
+
+  async function fetchUpgrades() {
+    try {
+      const response = await api.get('/agency-upgrades')
+      upgrades.value = response.data.data.upgrades
+      player.value = response.data.data.player
+      return upgrades.value
+    } catch (error) {
+      console.error('Failed to fetch upgrades:', error)
+      return []
+    }
+  }
+
+  async function purchaseUpgrade(type) {
+    const toast = useToastStore()
+    try {
+      const response = await api.post('/agency-upgrades/purchase', { type })
+      upgrades.value = response.data.data.upgrades
+      player.value = response.data.data.player
+      toast.success(response.data.data.message || 'Upgrade purchased!')
+      return { success: true }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to purchase upgrade'
+      toast.error(message)
+      return { success: false, error: message }
+    }
+  }
   
   return {
     // State
@@ -340,7 +498,15 @@ export const useGameStore = defineStore('game', () => {
     groups,
     songs,
     promotions,
+    promotionTypes,
+    upgrades,
     loading,
+    packLoading,
+    packDraft,
+    eventLog,
+    unreadEvents,
+    nowPlaying,
+    audioVolume,
     
     // Computed
     formattedMoney,
@@ -355,6 +521,8 @@ export const useGameStore = defineStore('game', () => {
     selectManager,
     fetchIdols,
     scoutIdol,
+    openIdolPack,
+    chooseIdolFromPack,
     fetchGroups,
     createGroup,
     fetchSongs,
@@ -364,7 +532,16 @@ export const useGameStore = defineStore('game', () => {
     fetchAvailablePromotions,
     startPromotion,
     completePromotion,
-    refreshPlayer
+    refreshPlayer,
+    fetchUpgrades,
+    purchaseUpgrade,
+    pulseEvents,
+    startEventPolling,
+    markEventsRead,
+    playSongAudio,
+    pauseSongAudio,
+    restartSongAudio,
+    setAudioVolume
   }
 })
 

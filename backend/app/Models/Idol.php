@@ -52,7 +52,8 @@ class Idol extends Model
     ];
 
     // Scouting costs
-    public const SCOUT_COST = 5000;
+    public const SCOUT_COST = 1000;
+    public const PACK_COST = 2500;
 
     public function playerProfile(): BelongsTo
     {
@@ -107,7 +108,8 @@ class Idol extends Model
             'stamina' => rand($min, $max),
             'popularity' => 0,
             'rarity' => $rarity,
-            'sprite_key' => 'idol_' . rand(1, 20),
+            // Bind sprite to one of the idol images (1-12) for consistency
+            'sprite_key' => 'idol_' . rand(1, 12),
         ];
     }
 
@@ -125,14 +127,14 @@ class Idol extends Model
     public static function getRandomNames(): array
     {
         return [
-            'Hana', 'Minho', 'Jisoo', 'Taehyun', 'Yerin', 'Woojin',
-            'Sana', 'Jiho', 'Nayeon', 'Hyunjin', 'Chaeyoung', 'Felix',
-            'Dahyun', 'Seungmin', 'Tzuyu', 'Changbin', 'Momo', 'Bangchan',
-            'Soyeon', 'Jeongin', 'Miyeon', 'Sunoo', 'Minnie', 'Heeseung',
-            'Yuqi', 'Jake', 'Shuhua', 'Jay', 'Ryujin', 'Sunghoon',
-            'Yeji', 'Jungwon', 'Lia', 'Ni-ki', 'Chaeryeong', 'Yeonjun',
-            'Yuna', 'Soobin', 'Winter', 'Beomgyu', 'Karina', 'Taehyun',
-            'Giselle', 'Huening Kai', 'Ningning', 'Eunchae', 'Kazuha', 'Sakura',
+            'Minho', 'Taehyun', 'Woojin', 'Hyunjin', 'Seungmin', 'Changbin', 'Bangchan', 'Heeseung',
+            'Jake', 'Jay', 'Sunghoon', 'Jungwon', 'Sunoo', 'Ni-ki', 'Yeonjun', 'Soobin', 'Beomgyu',
+            'Huening Kai', 'Felix', 'Yechan', 'Jisung', 'Jongho', 'San', 'Yeosang', 'Wooyoung',
+            'Mingi', 'Hongjoong', 'Yunho', 'Seonghwa', 'Jinyoung', 'Mark', 'Jaehyun', 'Taeyong',
+            'Doyoung', 'Ten', 'Renjun', 'Jeno', 'Haechan', 'Jaemin', 'Chenle', 'Shotaro', 'Sungchan',
+            'Lucas', 'Kihyun', 'Changkyun', 'Shownu', 'Minhyuk', 'Hyungwon', 'I.M', 'Hyuk',
+            'Ravi', 'N', 'Leo', 'Ken', 'Hongseok', 'Shinwon', 'Yuto', 'Yanan', 'Yeo One',
+            'Yanan', 'Hui', 'Kino', 'Wooseok', 'Jungwoo', 'Taemin', 'Jongin', 'Joon', 'Seok',
         ];
     }
 }

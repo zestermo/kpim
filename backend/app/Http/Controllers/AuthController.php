@@ -13,6 +13,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    protected function useSessionOnly(): bool
+    {
+        return (bool) env('SESSION_ONLY_AUTH', false);
+    }
+
     public function register(Request $request): JsonResponse
     {
         try {
@@ -28,6 +33,26 @@ class AuthController extends Controller
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+
+            if ($this->useSessionOnly()) {
+                // Session-only mock user (no DB)
+                $mockUser = [
+                    'id' => 1,
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                ];
+                $request->session()->put('dev_user', $mockUser);
+
+                Log::info('Register success (session-only)', $mockUser);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'user' => $mockUser,
+                        'message' => 'Registration successful (session only)',
+                    ],
+                ], 201);
+            }
 
             $user = User::create([
                 'name' => $validated['name'],
@@ -87,6 +112,25 @@ class AuthController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
+            if ($this->useSessionOnly()) {
+                $mockUser = [
+                    'id' => 1,
+                    'name' => 'Dev User',
+                    'email' => $validated['email'],
+                ];
+                $request->session()->put('dev_user', $mockUser);
+
+                Log::info('Login success (session-only)', $mockUser);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'user' => $mockUser,
+                        'message' => 'Login successful (session only)',
+                    ],
+                ]);
+            }
+
             if (!Auth::attempt($validated)) {
                 Log::warning('Login failed: bad credentials', [
                     'email' => $validated['email'],
@@ -134,10 +178,15 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($this->useSessionOnly()) {
+            $request->session()->forget('dev_user');
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        } else {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json([
             'success' => true,
@@ -149,6 +198,20 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
+        if ($this->useSessionOnly()) {
+            $user = $request->session()->get('dev_user');
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'user' => $user,
+                ],
+            ]);
+        }
+
         $user = $request->user()->load([
             'playerProfile.manager',
             'playerProfile.idols',

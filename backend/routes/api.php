@@ -10,6 +10,8 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\SongController;
 use App\Http\Controllers\PromotionController;
 
+$authMiddleware = env('SESSION_ONLY_AUTH', false) ? [] : ['auth:sanctum'];
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -24,7 +26,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
     
     // Protected routes
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware($authMiddleware)->group(function () {
         // Auth
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);

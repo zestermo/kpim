@@ -9,6 +9,7 @@ use App\Http\Controllers\IdolController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\SongController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\IdolPackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +25,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
     
     // Protected routes
-    Route::middleware(env('SESSION_ONLY_AUTH', false) ? [] : ['auth:sanctum'])->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
         // Auth
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
@@ -42,6 +43,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/idols/scout', [IdolController::class, 'scout']);
         Route::post('/idols/{idol}/train', [IdolController::class, 'train']);
         Route::delete('/idols/{idol}', [IdolController::class, 'release']);
+        
+        // Idol packs (gacha)
+        Route::post('/idol-packs', [IdolPackController::class, 'createPack']);
+        Route::post('/idol-packs/{pack}/choose', [IdolPackController::class, 'chooseIdol']);
         
         // Groups
         Route::get('/groups', [GroupController::class, 'index']);

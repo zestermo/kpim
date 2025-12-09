@@ -104,17 +104,18 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <!-- Background Music -->
-  <audio 
-    ref="audioRef" 
-    loop 
-    preload="auto"
-    :muted="isMuted"
-  >
-    <source src="/music/menu.mp3" type="audio/mpeg">
-  </audio>
+  <div class="min-h-screen flex flex-col">
+    <!-- Background Music -->
+    <audio 
+      ref="audioRef" 
+      loop 
+      preload="auto"
+      :muted="isMuted"
+    >
+      <source src="/music/menu.mp3" type="audio/mpeg">
+    </audio>
 
-  <div class="min-h-screen flex">
+    <div class="flex flex-1">
     <!-- Left Side - Splash Art -->
     <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden">
       <!-- Layer 1: Background Image (bgsplash.png) -->
@@ -278,6 +279,7 @@ async function handleSubmit() {
           </button>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>

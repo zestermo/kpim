@@ -32,39 +32,32 @@ class Manager extends Model
     {
         return [
             [
-                'name' => 'Minji Park',
+                'name' => 'Marble Mall',
                 'bonus_type' => self::BONUS_PROMOTION,
                 'bonus_value' => 0.15,
-                'flavor_text' => 'Former PR director with connections everywhere. Promotions are 15% more effective.',
-                'sprite_key' => 'manager_minji',
+                'flavor_text' => 'PR mastermind who can make any news cycle sparkle.',
+                'sprite_key' => 'manager_marble',
             ],
             [
-                'name' => 'Seojun Kim',
+                'name' => 'Nela Space',
                 'bonus_type' => self::BONUS_TRAINING,
                 'bonus_value' => 0.20,
-                'flavor_text' => 'Dance legend from the golden era. Training takes 20% less time.',
-                'sprite_key' => 'manager_seojun',
+                'flavor_text' => 'Relentless coach who squeezes 20% more out of every practice.',
+                'sprite_key' => 'manager_nela',
             ],
             [
-                'name' => 'Yuna Choi',
+                'name' => 'Spach Murmen',
                 'bonus_type' => self::BONUS_VIRALITY,
                 'bonus_value' => 0.10,
-                'flavor_text' => 'Social media maven. +10% chance for content to go viral.',
-                'sprite_key' => 'manager_yuna',
+                'flavor_text' => 'Social sorcerer with an eye for viral moments.',
+                'sprite_key' => 'manager_spach',
             ],
             [
-                'name' => 'Dohwan Lee',
-                'bonus_type' => self::BONUS_AWARD,
-                'bonus_value' => 0.08,
-                'flavor_text' => 'Awards show insider. +8% chance to win at ceremonies.',
-                'sprite_key' => 'manager_dohwan',
-            ],
-            [
-                'name' => 'Soyeon Hwang',
+                'name' => 'Harris Suppick',
                 'bonus_type' => self::BONUS_SCOUTING,
                 'bonus_value' => 0.12,
-                'flavor_text' => 'Eagle-eyed talent scout. Scouted idols have 12% higher base stats.',
-                'sprite_key' => 'manager_soyeon',
+                'flavor_text' => 'Talent bloodhound who finds hidden gems with ease.',
+                'sprite_key' => 'manager_harris',
             ],
         ];
     }

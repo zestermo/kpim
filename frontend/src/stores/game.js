@@ -11,6 +11,8 @@ export const useGameStore = defineStore('game', () => {
   const songs = ref([])
   const promotions = ref([])
   const loading = ref(false)
+  const packLoading = ref(false)
+  const packDraft = ref(null)
   
   // Computed
   const formattedMoney = computed(() => {
@@ -43,6 +45,7 @@ export const useGameStore = defineStore('game', () => {
     groups.value = []
     songs.value = []
     promotions.value = []
+    packDraft.value = null
   }
   
   async function fetchManagers() {
@@ -114,6 +117,42 @@ export const useGameStore = defineStore('game', () => {
       return { success: false }
     } finally {
       loading.value = false
+    }
+  }
+
+  async function openIdolPack() {
+    const toast = useToastStore()
+    packLoading.value = true
+    try {
+      const response = await api.post('/idol-packs')
+      packDraft.value = response.data.data
+      return { success: true, pack: packDraft.value }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to open pack'
+      toast.error(message)
+      return { success: false, error: message }
+    } finally {
+      packLoading.value = false
+    }
+  }
+
+  async function chooseIdolFromPack(packId, index) {
+    const toast = useToastStore()
+    packLoading.value = true
+    try {
+      const response = await api.post(`/idol-packs/${packId}/choose`, { index })
+      const idol = response.data.data.idol
+      idols.value.push(idol)
+      player.value = response.data.data.player
+      packDraft.value = null
+      toast.success(response.data.data.message || 'Idol recruited!')
+      return { success: true, idol }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to choose idol'
+      toast.error(message)
+      return { success: false, error: message }
+    } finally {
+      packLoading.value = false
     }
   }
   

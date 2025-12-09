@@ -13,6 +13,14 @@ const selectedManager = ref(null)
 const isSelecting = ref(false)
 const checking = ref(true)
 const error = ref('')
+const activeIndex = ref(0)
+
+const managerPortraits = {
+  marble: '/images/managers/marble.png',
+  nela: '/images/managers/nela.png',
+  spach: '/images/managers/spach.png',
+  harris: '/images/managers/harris.png',
+}
 
 onMounted(async () => {
   // Force refresh user data from server
@@ -35,6 +43,10 @@ onMounted(async () => {
   
   checking.value = false
   await gameStore.fetchManagers()
+  if (gameStore.managers.length > 0) {
+    activeIndex.value = 0
+    selectedManager.value = gameStore.managers[0]
+  }
 })
 
 async function confirmSelection() {
@@ -87,6 +99,75 @@ function formatBonus(manager) {
   return `+${percentage}%`
 }
 
+function getManagerImage(manager) {
+  const key = (manager?.sprite_key || manager?.name || '').toLowerCase()
+  if (key.includes('marble')) return managerPortraits.marble
+  if (key.includes('nela')) return managerPortraits.nela
+  if (key.includes('spach')) return managerPortraits.spach
+  if (key.includes('harris')) return managerPortraits.harris
+  
+  // Fallback deterministic pick
+  const values = Object.values(managerPortraits)
+  const index = Math.abs((manager?.id ?? 0)) % values.length
+  return values[index]
+}
+
+function isActive(idx) {
+  return idx === activeIndex.value
+}
+
+function getManagerCardStyle(manager) {
+  const img = getManagerImage(manager)
+  return {
+    backgroundImage: `linear-gradient(180deg, rgba(12,12,20,0) 0%, rgba(12,12,20,0) 60%, rgba(12,12,20,0.75) 100%), url(${img})`,
+    backgroundSize: '125%',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+  }
+}
+
+function normalizeOffset(idx) {
+  const total = gameStore.managers.length
+  if (total === 0) return 0
+  let diff = idx - activeIndex.value
+  const half = Math.floor(total / 2)
+  if (diff > half) diff -= total
+  if (diff < -half) diff += total
+  return diff
+}
+
+function getCardStyle(idx) {
+  const diff = normalizeOffset(idx)
+  const translate = diff * 260
+  const scale = Math.max(0.75, 1 - Math.abs(diff) * 0.08)
+  const rotate = diff * -6
+  const opacity = Math.max(0.35, 1 - Math.abs(diff) * 0.2)
+  const blur = Math.max(0, Math.abs(diff) - 1) * 2
+  return {
+    transform: `translate(-50%, -50%) translateX(${translate}px) scale(${scale}) rotateY(${rotate}deg)`,
+    zIndex: 100 - Math.abs(diff),
+    opacity,
+    filter: `blur(${blur}px)`,
+  }
+}
+
+function goNext() {
+  if (!gameStore.managers.length) return
+  activeIndex.value = (activeIndex.value + 1) % gameStore.managers.length
+  selectedManager.value = gameStore.managers[activeIndex.value]
+}
+
+function goPrev() {
+  if (!gameStore.managers.length) return
+  activeIndex.value = (activeIndex.value - 1 + gameStore.managers.length) % gameStore.managers.length
+  selectedManager.value = gameStore.managers[activeIndex.value]
+}
+
+function handleCardClick(idx) {
+  activeIndex.value = idx
+  selectedManager.value = gameStore.managers[idx]
+}
+
 const debugInfo = computed(() => ({
   hasUser: !!authStore.user,
   hasProfile: !!authStore.user?.playerProfile,
@@ -137,43 +218,52 @@ const debugInfo = computed(() => ({
           <p class="text-gray-400">Your manager will guide your agency with unique bonuses</p>
         </div>
         
-        <!-- Managers Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <div
-            v-for="manager in gameStore.managers"
-            :key="manager.id"
-            class="game-panel p-6 cursor-pointer transition-all duration-300"
-            :class="{
-              'ring-2 ring-kpop-pink-500 scale-105': selectedManager?.id === manager.id,
-              'hover:border-kpop-purple-400': selectedManager?.id !== manager.id
-            }"
-            @click="selectedManager = manager"
-          >
-            <!-- Avatar -->
-            <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-kpop-pink-500/20 to-kpop-purple-500/20 flex items-center justify-center text-4xl">
-              👔
-            </div>
-            
-            <!-- Name -->
-            <h3 class="text-xl font-bold text-center mb-2">{{ manager.name }}</h3>
-            
-            <!-- Bonus -->
-            <div class="bg-kpop-purple-500/20 rounded-lg px-4 py-2 mb-3 text-center">
-              <span class="text-sm text-gray-300">{{ bonusLabels[manager.bonus_type] }}</span>
-              <span class="ml-2 font-bold text-kpop-gold-400">{{ formatBonus(manager) }}</span>
-            </div>
-            
-            <!-- Flavor text -->
-            <p class="text-sm text-gray-400 text-center italic">
-              "{{ manager.flavor_text }}"
-            </p>
-            
-            <!-- Selection indicator -->
-            <div v-if="selectedManager?.id === manager.id" class="mt-4 text-center">
-              <span class="text-kpop-pink-400 font-medium">✓ Selected</span>
+      <!-- Managers Carousel -->
+      <div class="relative mb-10 min-h-[70vh] flex items-center justify-center">
+        <!-- Decorative scroll hints -->
+        <div class="absolute top-1/2 -translate-y-1/2 left-3 text-3xl text-white/40 pointer-events-none select-none">‹</div>
+        <div class="absolute top-1/2 -translate-y-1/2 right-3 text-3xl text-white/40 pointer-events-none select-none">›</div>
+        
+        <div class="overflow-hidden h-[520px] w-full flex items-center justify-center">
+          <div class="relative flex items-center justify-center perspective">
+            <div
+              v-for="(manager, idx) in gameStore.managers"
+              :key="manager.id"
+              class="manager-card absolute top-1/2 left-1/2 w-[300px] max-w-sm cursor-pointer transition-all duration-500 ease-out will-change-transform"
+              :class="isActive(idx) ? 'opacity-100 brightness-110 saturate-110 shadow-2xl' : 'opacity-60 brightness-75 saturate-75'"
+              :style="getCardStyle(idx)"
+              @click="handleCardClick(idx)"
+            >
+              <div 
+                class="game-panel min-h-[500px] p-0 flex flex-col h-full justify-end text-center border-transparent bg-gray-900/60 overflow-hidden"
+                :style="getManagerCardStyle(manager)"
+              >
+                <div class="flex-1"></div>
+                <div class="p-6 bg-gradient-to-t from-black/80 via-black/60 to-transparent">
+                  <h3 class="text-2xl font-bold mb-2 drop-shadow-lg">{{ manager.name }}</h3>
+                  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/35 border border-white/20 text-sm backdrop-blur-sm">
+                    <span>{{ bonusLabels[manager.bonus_type] }}</span>
+                    <span class="text-kpop-gold-300 font-bold">{{ formatBonus(manager) }}</span>
+                  </div>
+                  
+                  <p class="text-sm text-gray-200/90 italic drop-shadow mt-4 mb-3">
+                    "{{ manager.flavor_text }}"
+                  </p>
+                  
+                  <div class="text-center">
+                    <span 
+                      class="px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm"
+                      :class="selectedManager?.id === manager.id ? 'bg-kpop-pink-500/30 text-white border border-kpop-pink-200/60' : 'bg-black/35 text-gray-100 border border-white/20'"
+                    >
+                      {{ selectedManager?.id === manager.id ? 'Selected' : 'Tap to select' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
         
         <!-- Confirm Button -->
         <div class="text-center">

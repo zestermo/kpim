@@ -103,6 +103,14 @@
     @apply text-kpop-pink-400;
   }
 
+  .perspective {
+    perspective: 1600px;
+  }
+
+  .manager-card {
+    transition-property: transform, opacity, filter;
+  }
+
   /* Modal backdrop */
   .modal-backdrop {
     @apply fixed inset-0 bg-black/70 backdrop-blur-sm 
